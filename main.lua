@@ -14,6 +14,7 @@ _G.CompESP = false
 _G.PlayerESP = false
 _G.PodESP = false
 _G.ExitESP = false
+_G.FreeCamActive = false
 
 local Light = game:GetService("Lighting")
 local localPlayer = game.Players.LocalPlayer
@@ -122,13 +123,53 @@ TabVisual:CreateToggle({ Name = "ESP Jogadores", CurrentValue = false, Callback 
 TabVisual:CreateToggle({ Name = "ESP Tubos", CurrentValue = false, Callback = function(v) _G.PodESP = v if not v then SimpleClear("PodHighlight") end end })
 TabVisual:CreateToggle({ Name = "ESP Saídas", CurrentValue = false, Callback = function(v) _G.ExitESP = v if not v then SimpleClear("ExitHighlight") end end })
 
-TabMove:CreateSlider({ Name = "Velocidade", Range = {16, 100}, Increment = 1, CurrentValue = 16, Callback = function(v) _G.WalkSpeed = v end })
+-- Velocidade alterada de Slider para Input (caixinha)
+TabMove:CreateInput({
+   Name = "Velocidade",
+   PlaceholderText = "Padrão: 16",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+       local num = tonumber(Text)
+       if num then
+           _G.WalkSpeed = num
+       end
+   end,
+})
+
 TabMove:CreateToggle({ Name = "Pulo Infinito", CurrentValue = false, Callback = function(v) _G.InfJump = v end })
+
+TabMove:CreateButton({
+   Name = "FreeCam",
+   Callback = function()
+       _G.FreeCamActive = true
+       Rayfield:Notify({
+          Title = "Câmera Liberada",
+          Content = "A trava de primeira pessoa do Beast foi removida!",
+          Duration = 3,
+          Image = 4483345998,
+       })
+   end,
+})
 
 game:GetService("UserInputService").JumpRequest:Connect(function()
     if _G.InfJump then
         local p = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
         if p then p:ChangeState("Jumping") end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if _G.FreeCamActive then
+            local char = localPlayer.Character
+            local isBeast = char and (char:FindFirstChild("Hammer") or localPlayer.Backpack:FindFirstChild("Hammer"))
+            
+            if isBeast then
+                localPlayer.CameraMaxZoomDistance = 100
+                localPlayer.CameraMode = Enum.CameraMode.Classic
+            end
+        end
+        task.wait(0.5)
     end
 end)
 
